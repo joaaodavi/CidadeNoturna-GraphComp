@@ -55,9 +55,29 @@ createEnvironment(scene, renderer, diag.gui);           // neblina + reflexos: v
 createMaterialControls(diag.gui);                       // painel de materiais: ver materials.js
 
 const modelStatus = {};
-loadModels(scene, (name, ok) => { modelStatus[name] = ok; }).then(() => diag.apply());
+let bike = null;
+loadModels(scene, (name, ok) => { modelStatus[name] = ok; })
+  .then((objects) => { bike = objects['Moto Akira (FBX)']; diag.apply(); });
 
 window.addEventListener('resize', () => renderer.setSize(window.innerWidth, window.innerHeight));
+
+const ride = {
+  active: false,
+  offset: new THREE.Vector3(0, 1.6, 5), //onde a camera fica em relaçao a moto
+  pos: new THREE.Vector3(),
+  quat: new THREE.Quaternion(),
+};
+
+window.addEventListener('keydown', (e) => { if (e.code === 'KeyF') ride.active = !ride.active; });
+
+function updateRide(dt) {
+  if (!bike) return;
+  bike.getWorldPosition(ride.pos);
+  bike.getWorldQuaternion(ride.quat);
+  const desired = ride.offset.clone().applyQuaternion(ride.quat).add(ride.pos);
+  camera.position.lerp(desired, 1 - Math.exp(-6 * dt)); // suavização
+  camera.lookAt(ride.pos.x, ride.pos.y + 1, ride.pos.z);
+}
 
 // --- HUD ---
 const hud = document.getElementById('hud');
@@ -74,7 +94,7 @@ function updateHud(dt) {
     `Draw calls ${diag.stats.calls} · Triângulos ${diag.stats.triangles}\n` +
     `Frustum culling ${diag.state.frustumCulling ? 'ON' : 'OFF'}\n` +
     `Modelos:\n${models}\n\n` +
-    `WASD mover · Q/E descer/subir · Shift correr · setas/mouse girar\n` +
+    `WASD mover · Q/E descer/subir · F controlar a moto · Shift correr · setas/mouse girar\n` +
     `1 Wireframe · 2 Depth · 3 Back-face · 4 Frustum · 5 Frustum culling`;
   hudTime = 0;
   hudFrames = 0;
@@ -86,7 +106,7 @@ const timer = new THREE.Timer();
 renderer.setAnimationLoop((timestamp) => {
   timer.update(timestamp);
   const dt = Math.min(timer.getDelta(), 0.1); // limita saltos (ex.: aba em segundo plano)
-  nav.update(dt);
+  if (ride.active) updateRide(dt); else nav.update(dt);
   lights.update();
   diag.render();
   updateHud(dt);

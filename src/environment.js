@@ -1,9 +1,6 @@
 import * as THREE from 'three';
 
-// Ambiente noturno coerente: neblina na cor do céu + mapa de ambiente (reflexos).
-// Sem mapa de ambiente, superfícies metálicas e molhadas só refletem as luzes pontuais
-// e ficam "mortas". Aqui geramos um céu noturno com manchas de neon e usamos o PMREM
-// (pré-filtragem por rugosidade) para que cada material reflita de acordo com seu roughness.
+
 function buildNightEnvMap(renderer) {
   const envScene = new THREE.Scene();
 
