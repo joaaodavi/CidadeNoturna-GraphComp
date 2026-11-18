@@ -42,7 +42,7 @@ export const MODELS = [
       normalMap: '/models/akira/textures/AM_LP_01_-_Default_Normal.png',
     },
     material: { metalness: 0.5, roughness: 0.45 },
-    size: 2.2, position: [9, 0, 38], color: 0x44cc88 },
+    size: 2.5, position: [13, 0, 38], color: 0x44cc88 },
 
   { name: 'Moedas (glTF)', format:'gltf', url:'/models/coins/scene.gltf',
     textures: {

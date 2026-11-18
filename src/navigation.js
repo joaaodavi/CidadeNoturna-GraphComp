@@ -50,6 +50,7 @@ export function createNavigation(camera, domElement) {
     right.set(Math.cos(yaw), 0, -Math.sin(yaw));
 
     dir.set(0, 0, 0);
+
     if (keys.has('KeyW')) dir.add(forward);
     if (keys.has('KeyS')) dir.sub(forward);
     if (keys.has('KeyD')) dir.add(right);
@@ -65,5 +66,5 @@ export function createNavigation(camera, domElement) {
     camera.position.y = Math.max(camera.position.y, cfg.minHeight);
   }
 
-  return { cfg, update };
+  return { cfg, update, keys }; // keys: teclas pressionadas (também usadas pelos controles da moto)
 }

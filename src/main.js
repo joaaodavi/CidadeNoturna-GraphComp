@@ -63,12 +63,40 @@ window.addEventListener('resize', () => renderer.setSize(window.innerWidth, wind
 
 const ride = {
   active: false,
-  offset: new THREE.Vector3(0, 1.6, 5), //onde a camera fica em relaçao a moto
+  offset: new THREE.Vector3(7, 1.6, 0), //onde a camera fica em relaçao a moto
   pos: new THREE.Vector3(),
   quat: new THREE.Quaternion(),
 };
 
 window.addEventListener('keydown', (e) => { if (e.code === 'KeyF') ride.active = !ride.active; });
+
+// Controles da moto (ativos com F): W/S acelera e freia, A/D vira, Shift acelera mais.
+// A frente da moto é -Z local: a câmera (offset em +Z) fica atrás dela.
+const bikeCfg = { speed: 10, runMultiplier: 2, turnSpeed: 1.6, minSpeed: -3 };
+const bikeVelocity = { value: 0 };
+const bikeForward = new THREE.Vector3();
+
+function updateBike(dt) {
+  if (!bike) return;
+  const keys = nav.keys;
+  const run = keys.has('ShiftLeft') || keys.has('ShiftRight') ? bikeCfg.runMultiplier : 1;
+
+  // Aceleração e freio (suave, sem deslizar de repente)
+  let target = 0;
+  if (keys.has('KeyW')) target = bikeCfg.speed * run;
+  if (keys.has('KeyS')) target = bikeCfg.minSpeed;
+  bikeVelocity.value = THREE.MathUtils.lerp(bikeVelocity.value, target, 1 - Math.exp(-4 * dt));
+
+  // Giro só faz efeito com a moto em movimento (para não girar parada)
+  if (Math.abs(bikeVelocity.value) > 0.1) {
+    const turn = (keys.has('KeyA') ? 1 : 0) - (keys.has('KeyD') ? 1 : 0);
+    const dir = Math.sign(bikeVelocity.value); // de ré, o giro inverte
+    bike.rotation.y += turn * dir * bikeCfg.turnSpeed * dt;
+  }
+
+  bikeForward.set(-1, 0, 0).applyQuaternion(bike.quaternion);
+  bike.position.addScaledVector(bikeForward, bikeVelocity.value * dt);
+}
 
 function updateRide(dt) {
   if (!bike) return;
@@ -106,7 +134,7 @@ const timer = new THREE.Timer();
 renderer.setAnimationLoop((timestamp) => {
   timer.update(timestamp);
   const dt = Math.min(timer.getDelta(), 0.1); // limita saltos (ex.: aba em segundo plano)
-  if (ride.active) updateRide(dt); else nav.update(dt);
+  if (ride.active) { updateBike(dt); updateRide(dt); } else nav.update(dt);
   lights.update();
   diag.render();
   updateHud(dt);
